@@ -49,8 +49,8 @@ namespace CNTKBinaryWriter
                 .Select((v, i) => new { Value = v, SampleId = i / dimension }) // get samples idxs for each value
                 .GroupBy(v => v.SampleId) // grouping by sample id
                 .Select(g =>
-                    g.Select((v, idx) => new { v.Value, Idx = idx }) // add to non zero value its index in sample
-                     .Where(v => v.Value.CompareTo(zero) > 0) // get only non zero values from groups
+                    g.Select((v, idx) => new { v.Value, Idx = idx }) // add to value its index in sample
+                     .Where(v => v.Value.CompareTo(zero) > 0) // get only non zero values from sample
                      )
                 .Select(nz => new { NZWithIdx = nz, CountOfNZ = nz.Count() }); // add count of non zero values count to each sample
 
@@ -67,8 +67,6 @@ namespace CNTKBinaryWriter
             List<byte[]> results = new List<byte[]>((int)streamInfo.GetCountOfSequences(data) * 5);
             foreach (var lengthData in lengthsDatas)
             {
-                //actual number of samples
-                
                 byte[] nonZeroValuesInBytes = null;
                 Int32[] nonZeroIndices = null;
                 Int32[] nonZeroCountPerSample = null;
