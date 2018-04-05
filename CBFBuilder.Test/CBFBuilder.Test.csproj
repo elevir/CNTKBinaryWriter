@@ -48,8 +48,10 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="CBFBuilderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StreamInfoExtensionsTests.cs" />
+    <Compile Include="StreamInfoTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -19,7 +19,7 @@ namespace CNTKBinaryWriter
         private List<ChunkHeader> _chunks;
 
         /// <summary>
-        /// CBFBuilder allows write data in dense format in accordance with CNTK binary format
+        /// CBFBuilder allows write data in accordance with CNTK binary format
         /// https://docs.microsoft.com/en-us/cognitive-toolkit/brainscript-cntkbinary-reader
         /// </summary>
         /// <param name="streams">Definitions of streams</param>
@@ -39,27 +39,7 @@ namespace CNTKBinaryWriter
             _binaryWriter.Write(VERSION_NUMBER);
         }
 
-        private UInt32 WriteSequenceData<DataType>(
-            StreamInfo stream,
-            IEnumerable<DataType[]> sequences,
-            Func<DataType[], byte[]> getBytes)
-        {
-            UInt32 totalCountOfSamples = 0;
-            foreach (var sequence in sequences)
-            {
-                //actual number of samples
-                if ((UInt32)sequence.Length % stream.Dimension != 0)
-                    throw new InvalidDataException($"sequence must be a multiple of the dimension of a sample, but sequence.Length % stream.Dimension = {(UInt32)sequence.Length} % {stream.Dimension} = {(UInt32)sequence.Length % stream.Dimension}");
-                UInt32 countOfSamples = (UInt32)sequence.Length / stream.Dimension;
-                totalCountOfSamples += countOfSamples;
-                _binaryWriter.Write(countOfSamples);
-                byte[] bytesOfSequence = getBytes(sequence);
-                _binaryWriter.Write(bytesOfSequence);
-            }
-            return totalCountOfSamples;
-        }
-
-        private IEnumerable<UInt32> GetMaxSeqsLength<DataType>(Dictionary<StreamInfo, IEnumerable<DataType[]>> data)
+        private IEnumerable<UInt32> GetMaxSeqsLength(Dictionary<StreamInfo, IEnumerable<object>> data)
         {
             // suppose that one sample - one float value
             // stream 1:
@@ -86,39 +66,16 @@ namespace CNTKBinaryWriter
             // sequence_2_max = 3
 
             return data
-                ?.Select(kv => kv.Value.Select(seq => (UInt32)seq.Length / kv.Key.Dimension))
+                .Select(kv => kv.Key.GetSequencesLengths(kv.Value))
                 .Aggregate((acc, sampleCounts) => acc.Zip(sampleCounts, (f, s) => Math.Max(f, s)));
         }
 
-        private IEnumerable<UInt32> GetMaxSeqsLength(IEnumerable<UInt32> floatDataLength, IEnumerable<UInt32> doubleDataLength)
+        private void CheckDataValid(Dictionary<StreamInfo, IEnumerable<object>> data)
         {
-            if (floatDataLength != null && doubleDataLength != null)
-            {
-                return floatDataLength.Zip(doubleDataLength, (f, s) => Math.Max(f, s));
-            }
-            else if (floatDataLength != null)
-            {
-                return floatDataLength;
-            }
-            else
-            {
-                return doubleDataLength;
-            }
-        }
-
-        private void CheckDataValid(
-            Dictionary<StreamInfo, IEnumerable<float[]>> floatData,
-            Dictionary<StreamInfo, IEnumerable<double[]>> doubleData,
-            UInt32 numberOfSequences)
-        {
-            if (floatData == null && doubleData == null)
-                throw new InvalidDataException("at least one of data source must be not null");
-            bool countOfSequencesIsValid = true;
-            if (floatData != null)
-                countOfSequencesIsValid = countOfSequencesIsValid && floatData.Select(kv => kv.Value).All(values => values.Count() == numberOfSequences);
-            if (doubleData != null)
-                countOfSequencesIsValid = countOfSequencesIsValid && doubleData.Select(kv => kv.Value).All(values => values.Count() == numberOfSequences);
-            if (!countOfSequencesIsValid)
+            int countOfDifferentSequenceLentghs = data.Select(kv => kv.Key.GetCountOfSequences(kv.Value))
+                .Distinct() // after disctinct we must have only one element, otherwise at least one of inputs have more sequences than others
+                .Count();
+            if (countOfDifferentSequenceLentghs != 1)
                 throw new InvalidDataException("sequences count for all inputs must be equal across chunk");
         }
 
@@ -126,47 +83,31 @@ namespace CNTKBinaryWriter
         /// Write one chunk into the output file. Note that the count of sequences in each data parameter
         /// must be equal to number of sequences defined in numberOfSequeces parameter.
         /// </summary>
-        /// <param name="floatData">Sequences of samples with type 'float'</param>
-        /// <param name="doubleData">Sequences of samples with type 'double'</param>
-        /// <param name="numberOfSequences">Number of sequences</param>
+        /// <param name="data">Sequences of samples for each input (object must be float[] or double[])</param>
         /// <returns>CBFBuilder</returns>
-        public CBFBuilder AddChunk(
-            Dictionary<StreamInfo, IEnumerable<float[]>> floatData,
-            Dictionary<StreamInfo, IEnumerable<double[]>> doubleData,
-            UInt32 numberOfSequences)
+        public CBFBuilder AddChunk(Dictionary<StreamInfo, IEnumerable<object>> data)
         {
-            CheckDataValid(floatData, doubleData, numberOfSequences);
+            CheckDataValid(data);
 
             UInt64 offset = (ulong)_binaryWriter.BaseStream.Position;
             UInt32 totalCountOfSamples = 0;
+            UInt32 numberOfSequences = data.First().Key.GetCountOfSequences(data.First().Value);
 
-            UInt32[] maxs = 
-                GetMaxSeqsLength(GetMaxSeqsLength(floatData), GetMaxSeqsLength(doubleData))
-                .ToArray();
+            UInt32[] maxs = GetMaxSeqsLength(data).ToArray();
 
             // write maximum number of samples across all sequences in chunk
-            _binaryWriter.Write(maxs.SelectMany(max => BitConverter.GetBytes(max)).ToArray());
+            _binaryWriter.Write(maxs.SelectMany(BitConverter.GetBytes).ToArray());
 
             // write data of each input
+
             foreach (var stream in _streams)
             {
-                if (floatData.ContainsKey(stream))
-                    totalCountOfSamples += WriteSequenceData(
-                        stream,
-                        floatData[stream],
-                        sequence => 
-                            sequence
-                                .SelectMany(value => BitConverter.GetBytes(value))
-                                .ToArray());
-                else
-                    totalCountOfSamples += WriteSequenceData(
-                        stream,
-                        doubleData[stream],
-                        sequence => 
-                            sequence
-                                .SelectMany(value => BitConverter.GetBytes(value))
-                                .ToArray());
+                byte[] chunkData = null;
+                chunkData = stream.GetData(data[stream]);
+                totalCountOfSamples += stream.GetCountOfSamples(data[stream]);
+                _binaryWriter.Write(chunkData);
             }
+
             _chunks.Add(
                 new ChunkHeader(
                     offset,
@@ -183,7 +124,7 @@ namespace CNTKBinaryWriter
 
         private void WriteStreamHeader(StreamInfo stream)
         {
-            _binaryWriter.Write((byte)0); // only dense data
+            _binaryWriter.Write((byte)stream.IsSparse);
             _binaryWriter.Write((UInt32)stream.Name.Length);
             _binaryWriter.Write(Encoding.ASCII.GetBytes(stream.Name));
             _binaryWriter.Write((byte)stream.DataType);
@@ -193,7 +134,7 @@ namespace CNTKBinaryWriter
         private void WriteChunkHeader(ChunkHeader chunk)
         {
             _binaryWriter.Write(chunk.Offset);
-            _binaryWriter.Write(chunk.NumberOfSequencies);
+            _binaryWriter.Write(chunk.NumberOfSequences);
             _binaryWriter.Write(chunk.TotalNumberOfSamples);
         }
 

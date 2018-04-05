@@ -11,12 +11,12 @@ namespace CNTKBinaryWriter
         public string Name { get; private set; }
         public int DataType { get; private set; }
         public UInt32 Dimension { get; private set; }
-        public bool IsSparse { get; private set; }
+        public int IsSparse { get; private set; }
 
         /// <param name="name">Name of input stream</param>
         /// <param name="dataType">Data type of stream (0 - float32, 1 - double)</param>
         /// <param name="dimension">Dimension of each sample in stream</param>
-        public StreamInfo(string name, int dataType, UInt32 dimension, bool isSparse)
+        private StreamInfo(string name, int dataType, UInt32 dimension, int isSparse)
         {
             Name = name;
             DataType = dataType;
@@ -33,7 +33,9 @@ namespace CNTKBinaryWriter
         /// <returns>Stream</returns>
         public static StreamInfo Create(string name, int dataType, UInt32 dimension, bool isSparse = false)
         {
-            return new StreamInfo(name, dataType, dimension, isSparse);
+            if (dataType != 0 && dataType != 1)
+                throw new NotSupportedException("Supported only float - 0 and double - 1 data types");
+            return new StreamInfo(name, dataType, dimension, isSparse ? 1 : 0);
         }
     }
 }
