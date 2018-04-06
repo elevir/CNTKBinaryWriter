@@ -50,7 +50,7 @@ namespace CNTKBinaryWriter
                 .GroupBy(v => v.SampleId) // grouping by sample id
                 .Select(g =>
                     g.Select((v, idx) => new { v.Value, Idx = idx }) // add to value its index in sample
-                     .Where(v => v.Value.CompareTo(zero) > 0) // get only non zero values from sample
+                     .Where(v => v.Value.CompareTo(zero) != 0) // get only non zero values from sample
                      )
                 .Select(nz => new { NZWithIdx = nz, CountOfNZ = nz.Count() }); // add count of non zero values count to each sample
 
