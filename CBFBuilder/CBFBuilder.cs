@@ -80,8 +80,7 @@ namespace CNTKBinaryWriter
         }
 
         /// <summary>
-        /// Write one chunk into the output file. Note that the count of sequences in each data parameter
-        /// must be equal to number of sequences defined in numberOfSequeces parameter.
+        /// Write one chunk into the output file.
         /// </summary>
         /// <param name="data">Sequences of samples for each input (object must be float[] or double[])</param>
         /// <returns>CBFBuilder</returns>
@@ -90,22 +89,18 @@ namespace CNTKBinaryWriter
             CheckDataValid(data);
 
             UInt64 offset = (ulong)_binaryWriter.BaseStream.Position;
-            UInt32 totalCountOfSamples = 0;
-            UInt32 numberOfSequences = data.First().Key.GetCountOfSequences(data.First().Value);
-
             UInt32[] maxs = GetMaxSeqsLength(data).ToArray();
-
+            UInt32 numberOfSequences = (UInt32)maxs.Length;
+            
             // write maximum number of samples across all sequences in chunk
             _binaryWriter.Write(maxs.SelectMany(BitConverter.GetBytes).ToArray());
 
             // write data of each input
-
+            UInt32 totalCountOfSamples = 0;
             foreach (var stream in _streams)
             {
-                byte[] chunkData = null;
-                chunkData = stream.GetData(data[stream]);
                 totalCountOfSamples += stream.GetCountOfSamples(data[stream]);
-                _binaryWriter.Write(chunkData);
+                _binaryWriter.Write(stream.GetData(data[stream]));
             }
 
             _chunks.Add(

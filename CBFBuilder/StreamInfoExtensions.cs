@@ -76,20 +76,20 @@ namespace CNTKBinaryWriter
                     GetSparseSequence(
                         lengthData.Item2 as float[], 0.0f, streamInfo.Dimension,
                         out float[] nonZeroElements, out nonZeroIndices, out nonZeroCountPerSample);
-                    nonZeroValuesInBytes = nonZeroElements.SelectMany(v => BitConverter.GetBytes(v)).ToArray();
+                    nonZeroValuesInBytes = nonZeroElements.SelectMany(BitConverter.GetBytes).ToArray();
                 }
                 if (streamInfo.DataType == 1)
                 {
                     GetSparseSequence(
                         lengthData.Item2 as double[], 0.0, streamInfo.Dimension,
                         out double[] nonZeroElements, out nonZeroIndices, out nonZeroCountPerSample);
-                    nonZeroValuesInBytes = nonZeroElements.SelectMany(v => BitConverter.GetBytes(v)).ToArray();
+                    nonZeroValuesInBytes = nonZeroElements.SelectMany(BitConverter.GetBytes).ToArray();
                 }
 
                 byte[] actualNumberOfSamplesInBytes = BitConverter.GetBytes(lengthData.Item1);
-                byte[] nonZeroIndicesInBytes = nonZeroIndices.SelectMany(v => BitConverter.GetBytes(v)).ToArray();
-                byte[] nonZeroCountPerSampleInBytes = nonZeroCountPerSample.SelectMany(v => BitConverter.GetBytes(v)).ToArray();
-                byte[] totalNumberOfNonZeroElementsInBytes = BitConverter.GetBytes(nonZeroCountPerSample.Sum(v => (int)v));
+                byte[] nonZeroIndicesInBytes = nonZeroIndices.SelectMany(BitConverter.GetBytes).ToArray();
+                byte[] nonZeroCountPerSampleInBytes = nonZeroCountPerSample.SelectMany(BitConverter.GetBytes).ToArray();
+                byte[] totalNumberOfNonZeroElementsInBytes = BitConverter.GetBytes(nonZeroCountPerSample.Sum());
 
                 results.Add(actualNumberOfSamplesInBytes);
                 results.Add(totalNumberOfNonZeroElementsInBytes);
@@ -117,14 +117,14 @@ namespace CNTKBinaryWriter
                 {
                     float[] sequence = lengthData.Item2 as float[];
                     bytesOfSequence = sequence
-                        .Select(value => BitConverter.GetBytes(value))
+                        .Select(BitConverter.GetBytes)
                         .SelectMany(v => v).ToArray();
                 }
                 if (streamInfo.DataType == 1)
                 {
                     double[] sequence = lengthData.Item2 as double[];
                     bytesOfSequence = sequence
-                        .Select(value => BitConverter.GetBytes(value))
+                        .Select(BitConverter.GetBytes)
                         .SelectMany(v => v).ToArray();
                 }
                 results.Add(countOfSamplesBytes);

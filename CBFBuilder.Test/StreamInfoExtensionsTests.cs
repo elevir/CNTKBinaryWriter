@@ -161,7 +161,7 @@ namespace CNTKBinaryWriter.Test
             // float data
 
             streamInfo = StreamInfo.Create("", 0, 3);
-            float[] fdata = new float[] { 0, 2, 3, 4, 0, 6, 7, 8, 0 };
+            float[] fdata = new float[] { 0, -2, 3, 4, 0, 6, -7, -8, 0 };
             sequences = new object[] { fdata.Clone(), fdata.Clone() };
             result = streamInfo.GetSparseData(sequences);
             expected = 
@@ -184,7 +184,7 @@ namespace CNTKBinaryWriter.Test
             // double data
 
             streamInfo = StreamInfo.Create("", 1, 3);
-            double[] ddata = new double[] { 0, 2, 3, 4, 0, 6, 7, 8, 0 };
+            double[] ddata = new double[] { 0, -2, 3, 4, 0, 6, -7, -8, 0 };
             sequences = new object[] { ddata.Clone(), ddata.Clone() };
             result = streamInfo.GetSparseData(sequences);
             expected =
