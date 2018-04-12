@@ -39,7 +39,7 @@ namespace CNTKBinaryWriter
             _binaryWriter.Write(VERSION_NUMBER);
         }
 
-        private IEnumerable<UInt32> GetMaxSeqsLength(Dictionary<StreamInfo, IEnumerable<object>> data)
+        private IEnumerable<UInt32> GetTotalCountOfSamplesAcrossAllInputs(Dictionary<StreamInfo, IEnumerable<object>> data)
         {
             // suppose that one sample - one float value
             // stream 1:
@@ -61,13 +61,13 @@ namespace CNTKBinaryWriter
             //     sequence 1 length: 2
             //     sequence 2 length: 3
 
-            // sequence_0_max = 5
-            // sequence_1_max = 5
-            // sequence_2_max = 3
+            // sequence_0_total_count_of_samples = 9
+            // sequence_1_total_count_of_samples = 7
+            // sequence_2_total_count_of_samples = 5
 
             return data
                 .Select(kv => kv.Key.GetSequencesLengths(kv.Value))
-                .Aggregate((acc, sampleCounts) => acc.Zip(sampleCounts, (f, s) => Math.Max(f, s)));
+                .Aggregate((acc, sampleCounts) => acc.Zip(sampleCounts, (f, s) => f + s));
         }
 
         private void CheckDataValid(Dictionary<StreamInfo, IEnumerable<object>> data)
@@ -89,11 +89,11 @@ namespace CNTKBinaryWriter
             CheckDataValid(data);
 
             UInt64 offset = (ulong)_binaryWriter.BaseStream.Position;
-            UInt32[] maxs = GetMaxSeqsLength(data).ToArray();
-            UInt32 numberOfSequences = (UInt32)maxs.Length;
+            UInt32[] totalCountsOfSamples = GetTotalCountOfSamplesAcrossAllInputs(data).ToArray();
+            UInt32 numberOfSequences = (UInt32)totalCountsOfSamples.Length;
             
             // write maximum number of samples across all sequences in chunk
-            _binaryWriter.Write(maxs.SelectMany(BitConverter.GetBytes).ToArray());
+            _binaryWriter.Write(totalCountsOfSamples.SelectMany(BitConverter.GetBytes).ToArray());
 
             // write data of each input
             UInt32 totalCountOfSamples = 0;
