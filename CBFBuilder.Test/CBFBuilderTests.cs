@@ -59,17 +59,17 @@ namespace CNTK.Formatters.Tests
         }
 
         [TestMethod]
-        public void TestGetMaxLengths()
+        public void TestGetTotalCountOfSamplesAcrossAllInputs()
         {
             var data = MakeData();
             using (var cbf = new CBFBuilder(data.Select(kv => kv.Key).ToArray(), "test.bin"))
             {
                 var cbfPO = new PrivateObject(cbf);
                 var retval = cbfPO.Invoke(
-                    "GetMaxSeqsLength",
+                    "GetTotalCountOfSamplesAcrossAllInputs",
                     new object[] { data }) as IEnumerable<UInt32>;
-                Assert.IsTrue(retval.Zip(new UInt32[] { 5, 5, 3 }, (f, s) => f == s).All(v => v),
-                    $"Expected (5, 5, 3), but returned {String.Join(", ", retval)}");
+                Assert.IsTrue(retval.Zip(new UInt32[] { 9, 7, 5 }, (f, s) => f == s).All(v => v),
+                    $"Expected (9, 7, 5), but returned {String.Join(", ", retval)}");
             }
         }
 
