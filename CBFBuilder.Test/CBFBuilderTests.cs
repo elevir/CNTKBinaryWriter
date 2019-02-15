@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using CNTKBinaryWriter;
 using System.IO;
 using System.Reflection;
+using System.Globalization;
 
 namespace CNTK.Formatters.Tests
 {
@@ -64,10 +65,17 @@ namespace CNTK.Formatters.Tests
             var data = MakeData();
             using (var cbf = new CBFBuilder(data.Select(kv => kv.Key).ToArray(), "test.bin"))
             {
-                var cbfPO = new PrivateObject(cbf);
-                var retval = cbfPO.Invoke(
+                Type cbfType = cbf.GetType();
+                MethodInfo mi = cbfType.GetMethod(
                     "GetTotalCountOfSamplesAcrossAllInputs",
-                    new object[] { data }) as IEnumerable<UInt32>;
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+
+                var retval = mi.Invoke(
+                    cbf,
+                    BindingFlags.NonPublic,
+                    null,
+                    new object[] { data },
+                    CultureInfo.CurrentCulture) as IEnumerable<UInt32>;
                 Assert.IsTrue(retval.Zip(new UInt32[] { 9, 7, 5 }, (f, s) => f == s).All(v => v),
                     $"Expected (9, 7, 5), but returned {String.Join(", ", retval)}");
             }
@@ -79,17 +87,32 @@ namespace CNTK.Formatters.Tests
             var data = MakeData();
             using (var cbf = new CBFBuilder(data.Select(kv => kv.Key).ToArray(), "test.bin"))
             {
-                var cbfPO = new PrivateObject(cbf);
-                cbfPO.Invoke(
+                Type cbfType = cbf.GetType();
+                MethodInfo mi = cbfType.GetMethod(
                     "CheckDataValid",
-                    new object[] { data });
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+
+                mi.Invoke(
+                    cbf,
+                    BindingFlags.NonPublic,
+                    null,
+                    new object[] { data },
+                    CultureInfo.CurrentCulture);
             }
 
             data = MakeWrongData();
             using (var cbf = new CBFBuilder(data.Select(kv => kv.Key).ToArray(), "test.bin"))
             {
-                var cbfPO = new PrivateObject(cbf);
-                Assert.ThrowsException<TargetInvocationException>(() => cbfPO.Invoke("CheckDataValid", new object[] { data }));
+                Type cbfType = cbf.GetType();
+                MethodInfo mi = cbfType.GetMethod("CheckDataValid",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+
+                Assert.ThrowsException<TargetInvocationException>(
+                    () => mi.Invoke(cbf, 
+                    BindingFlags.NonPublic | BindingFlags.Instance, 
+                    null,
+                    new object[] { data },
+                    CultureInfo.CurrentCulture));
             }
         }
     }
