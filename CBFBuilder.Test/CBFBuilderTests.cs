@@ -72,7 +72,7 @@ namespace CNTK.Formatters.Tests
 
                 var retval = mi.Invoke(
                     cbf,
-                    BindingFlags.NonPublic,
+                    BindingFlags.NonPublic | BindingFlags.Instance,
                     null,
                     new object[] { data },
                     CultureInfo.CurrentCulture) as IEnumerable<UInt32>;
@@ -94,7 +94,7 @@ namespace CNTK.Formatters.Tests
 
                 mi.Invoke(
                     cbf,
-                    BindingFlags.NonPublic,
+                    BindingFlags.NonPublic | BindingFlags.Instance,
                     null,
                     new object[] { data },
                     CultureInfo.CurrentCulture);

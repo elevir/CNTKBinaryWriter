@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Paul "Elevir" Kozin</Authors>
+    <Description>Library that allows write data in accordance with CNTK Binary Format</Description>
+    <Copyright>Kozin Paul</Copyright>
+    <PackageLicenseUrl>https://github.com/elevir/CNTKBinaryWriter/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/elevir/CNTKBinaryWriter</PackageProjectUrl>
+    <PackageTags>CNTK, CNTKBinaryFormat, BinaryFormat, CNTKBinaryReader, CBF</PackageTags>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>CNTKBinaryWriter</PackageId>
+    <Product>CNTKBinaryWriter</Product>
   </PropertyGroup>
 
 </Project>
