@@ -54,7 +54,7 @@ Dictionary<StreamInfo, IEnumerable<object>> data = new Dictionary<StreamInfo, IE
 ```
 4. And last step is writing data chunks into the file:
 ```
- using (var cbf = new CBFBuilder(inputs, filePath))
+using (var cbf = new CBFBuilder(inputs, filePath))
 {
     cbf
         .AddChunk(data) // You can finish on this place
@@ -67,6 +67,6 @@ Dictionary<StreamInfo, IEnumerable<object>> data = new Dictionary<StreamInfo, IE
 }
 ```
 
-It is important(!) to use statement `using` or invoke Dispose() after data was written, otherwise data file will be broken, and CNTK couldn't parse your file.
+It is important(!) to use statement `using` or invoke `Dispose()` after data was written, otherwise data file will be broken, and CNTK couldn't parse your file.
 
 Full code of example you can see [here](https://github.com/elevir/CNTKBinaryWriter/blob/master/CBFBuilder.Examples/Program.cs)
